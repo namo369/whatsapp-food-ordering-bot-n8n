@@ -1,0 +1,386 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.messages[0].text.body }}",
+        "options": {
+          "systemMessage": "You are a smart food ordering assistant for \"Catch Restaurant\".\n\nRules:\n\n1. When a user sends their first message (like hi, hello), reply with:\n\"Welcome to MDA Restaurant 🍽️\nHow can I help you today?\"\n\n🍔 Place an order\n\n📄 FAQ / Information\n\n📦 Check order / stock\n\n(👉 Keep the tone friendly like a food delivery app, not like a product e-commerce site)\n\n2. If user wants order:\n\nAsk step by step: name, food item, quantity\n\nCheck Inventory sheet before confirming\n\nIf available →\n\"Your order for {item} (x quantity) is confirmed ✅\"\n\nIf not available →\n\"Sorry, {item} is out of stock ❌. Available options: {list items}\"\n\nOnly confirmed orders go into the Orders sheet\n\nIn Orders sheet always include:\n\nStatus = Confirmed / Rejected\n\nDescription = \"Order accepted (item available)\" OR\n\"Order rejected (out of stock)\"\n\n3. If user wants FAQ:\n\nAnswer short and clear\n\nTopics: delivery time, payment method, restaurant hours\n\n4. If user wants check order or check stock:\n\nAsk for food name or order id\n\nLook up in Google Sheets (Orders / Inventory)\n\nIf checking order → reply with status\n(Confirmed / Rejected / Cancelled / Delivered)\n\nIf checking stock → reply with available quantity of that food\n\nAlso list available food items with quantity if requested\n\n5. If user wants cancel order:\n\nReply politely:\n\"Sorry 🙏 I cannot cancel orders directly.\nPlease call the restaurant owner first and inform them.\"\n\nOwner Contact: +95 1224567890\n\n6. Always reply in short text like a normal WhatsApp chat\n\nDo not use bold or long paragraphs\n\nUse stars only for highlighting words\n\nKeep tone friendly, polite, and food-delivery app style\n\nNever ask quantity for an item that is not confirmed available in inventory."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -256,
+        -80
+      ],
+      "id": "7b1abda6-a853-4289-a1dc-d569377f47eb",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        128
+      ],
+      "id": "d91edec2-a8ae-46b1-bb63-787f052f2a96",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "t1jbZHjZOOcytTf5",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{$('WhatsApp Trigger').item.json.contacts [0].wa_id}}",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -240,
+        176
+      ],
+      "id": "9ee84732-9634-4aad-8e68-3e27a69b3297",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to check if a food item exists in inventory.\n\nInput: food item name\nOutput:\n- If no record found → item is NOT available\n- If record found → item is available, include quantity\n\nAlways use this tool BEFORE asking quantity.",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appT4u6VN6jrusLs0",
+          "mode": "list",
+          "cachedResultName": "Food Delivery System",
+          "cachedResultUrl": "https://airtable.com/appT4u6VN6jrusLs0"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl7uItSOcuYgmq7Z",
+          "mode": "list",
+          "cachedResultName": "Inventory",
+          "cachedResultUrl": "https://airtable.com/appT4u6VN6jrusLs0/tbl7uItSOcuYgmq7Z"
+        },
+        "filterByFormula": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Filter_By_Formula', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        176,
+        64
+      ],
+      "id": "9aee4ec6-5c19-43c0-a95c-d66ca4373f69",
+      "name": "inventory",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "yTb6RReiZ27TfkKx",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to create a new food order by saving the food item, quantity, order date, time, and order status.",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appT4u6VN6jrusLs0",
+          "mode": "list",
+          "cachedResultName": "Food Delivery System",
+          "cachedResultUrl": "https://airtable.com/appT4u6VN6jrusLs0"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblNoq60uVNeoYoQj",
+          "mode": "list",
+          "cachedResultName": "Orders",
+          "cachedResultUrl": "https://airtable.com/appT4u6VN6jrusLs0/tblNoq60uVNeoYoQj"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Customer Name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Customer_Name', ``, 'string') }}",
+            "Food Item": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Food_Item', ``, 'string') }}",
+            "Quantity Ordered": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Quantity_Ordered', ``, 'string') }}",
+            " Status": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('_Status', ``, 'string') }}",
+            "Time": "={{ new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) }}",
+            "Order Date": "={{ new Date().toISOString().split('T')[0] }}\n"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Food Item",
+              "displayName": "Food Item",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Quantity Ordered",
+              "displayName": "Quantity Ordered",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Order Date",
+              "displayName": "Order Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": " Status",
+              "displayName": " Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        -112,
+        128
+      ],
+      "id": "46c9ed94-835d-40e5-b47c-84a325a9396d",
+      "name": "Order",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "yTb6RReiZ27TfkKx",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        -80
+      ],
+      "id": "e9a5f6a4-08ed-4922-a723-c3f45c008911",
+      "name": "WhatsApp Trigger",
+      "webhookId": "7af21089-7b49-4429-9bb8-785a9833f7a9",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "kQs4WA1yYIztZ8RX",
+          "name": "WhatsApp OAuth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "900890439778310",
+        "recipientPhoneNumber": "+91 90000008",
+        "textBody": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        304,
+        -80
+      ],
+      "id": "2d3d278e-7cee-4143-9e59-a51fdd5f19a4",
+      "name": "Send message",
+      "webhookId": "8c269638-c552-4443-bfa2-329816e6296d",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Rvg5qTfpc85ji6YQ",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to answer frequently asked questions about the food delivery service such as opening hours, delivery availability, refunds, payments, and general customer queries.",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appT4u6VN6jrusLs0",
+          "mode": "list",
+          "cachedResultName": "Food Delivery System",
+          "cachedResultUrl": "https://airtable.com/appT4u6VN6jrusLs0"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblxj9kKYOzg3rMyF",
+          "mode": "list",
+          "cachedResultName": "FAQ",
+          "cachedResultUrl": "https://airtable.com/appT4u6VN6jrusLs0/tblxj9kKYOzg3rMyF"
+        },
+        "filterByFormula": "=={{ \n  \"FIND(LOWER('\" + $json.messages[0].text.body + \"'), LOWER({Question}))\" \n}}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        32,
+        112
+      ],
+      "id": "62910ac2-1f48-4aaf-a975-9f3a72dd2b4c",
+      "name": "FAQ",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "yTb6RReiZ27TfkKx",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "inventory": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FAQ": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2e38e0c4-6bb4-466b-a253-8e5f908b42ec",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c9df3a21bce206a341467734926d2dc98ca49cb1436f467daf4ec64f2f103012"
+  },
+  "id": "rL1XHPMsoREft5cR",
+  "tags": []
+}
