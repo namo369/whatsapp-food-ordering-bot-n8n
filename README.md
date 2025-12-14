@@ -53,23 +53,23 @@ This bot can:
 ## Screenshots
 ## 🧠 Architecture Overview
 
-![Workflow](screenshots/n8n-automation.png)
+![Workflow](whatsapp-food-bot/screenshots/n8n-automation.png)
 
 ---
 
 ## 📦 Airtable Structure
 
 ### Inventory Table
-![Inventory](screenshots/inventory-table.png)
+![Inventory](whatsapp-food-bot/screenshots/inventory-table.png)
 
 ### Orders Table
-![Orders](screenshots/order-table.png)
+![Orders](whatsapp-food-bot/screenshots/order-table.png)
 
 ### FAQ Table
-![FAQ](screenshots/faq-table.png)
+![FAQ](whatsapp-food-bot/screenshots/faq-table.png)
 
 ### Test
-![Test](screenshots/test-output.jpg)
+![Test](whatsapp-food-bot/screenshots/test-output.jpg)
 
 ---
 
